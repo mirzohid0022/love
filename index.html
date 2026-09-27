@@ -1,0 +1,376 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Lamp + I Love You</title>
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      min-height: 100vh;
+      background: #0a0a0f;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-family: system-ui, -apple-system, sans-serif;
+      overflow: hidden;
+      transition: background 0.8s ease;
+    }
+
+    body.is-on {
+      background: radial-gradient(ellipse at 30% 40%, #3d2a1a 0%, #1a1210 40%, #0a0a0f 100%);
+    }
+
+    #scene {
+      position: relative;
+      width: 100%;
+      max-width: 900px;
+      height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    /* Lamp */
+    .lamp {
+      position: absolute;
+      left: 12%;
+      top: 18%;
+      z-index: 10;
+    }
+
+    .cord {
+      width: 2px;
+      height: 90px;
+      background: #c9b8a0;
+      margin: 0 auto;
+      border-radius: 1px;
+    }
+
+    .bulb {
+      width: 70px;
+      height: 85px;
+      background: #2a2a2e;
+      border-radius: 50% 50% 45% 45%;
+      position: relative;
+      margin: 0 auto;
+      box-shadow: inset 0 -10px 20px rgba(0,0,0,0.4);
+      transition: background 0.6s ease, box-shadow 0.6s ease;
+    }
+
+    body.is-on .bulb {
+      background: linear-gradient(180deg, #fff8e7 0%, #ffd78a 40%, #e8a84a 100%);
+      box-shadow:
+        0 0 40px 15px rgba(255, 200, 100, 0.5),
+        0 0 80px 30px rgba(255, 160, 50, 0.25),
+        inset 0 -8px 15px rgba(255, 180, 50, 0.3);
+    }
+
+    .bulb::before {
+      content: "";
+      position: absolute;
+      top: -8px;
+      left: 50%;
+      transform: translateX(-50%);
+      width: 28px;
+      height: 12px;
+      background: #8a7a65;
+      border-radius: 3px 3px 0 0;
+    }
+
+    /* Pull switch */
+    #pullSwitch {
+      position: absolute;
+      left: 50%;
+      top: 100%;
+      transform: translateX(-50%);
+      width: 18px;
+      height: 28px;
+      background: #e8e0d5;
+      border-radius: 9px;
+      cursor: pointer;
+      box-shadow: 0 4px 8px rgba(0,0,0,0.3);
+      transition: transform 0.25s cubic-bezier(0.34, 1.56, 0.64, 1);
+      z-index: 20;
+    }
+
+    #pullSwitch.pulling {
+      transform: translateX(-50%) translateY(18px);
+    }
+
+    #pullSwitch:hover {
+      background: #f5f0e8;
+    }
+
+    .hint {
+      position: absolute;
+      left: 50%;
+      top: 110%;
+      transform: translateX(-50%);
+      white-space: nowrap;
+      font-size: 13px;
+      color: #8a8070;
+      margin-top: 8px;
+      transition: color 0.4s;
+    }
+
+    body.is-on .hint {
+      color: #c9b8a0;
+    }
+
+    /* Main message */
+    .message {
+      position: absolute;
+      right: 8%;
+      top: 50%;
+      transform: translateY(-50%);
+      text-align: center;
+      opacity: 0;
+      transition: opacity 0.6s ease 0.15s;
+      z-index: 5;
+    }
+
+    body.is-on .message {
+      opacity: 1;
+    }
+
+    .message h1 {
+      font-size: clamp(2.8rem, 7vw, 4.8rem);
+      font-weight: 700;
+      letter-spacing: 0.08em;
+      color: #f5d78a;
+      text-shadow: 0 0 30px rgba(255, 200, 80, 0.4);
+      display: flex;
+      align-items: center;
+      gap: 0.35em;
+      justify-content: center;
+    }
+
+    .message .heart {
+      display: inline-block;
+      color: #ff6b8a;
+      font-size: 1.15em;
+      animation: heartbeat 1.4s ease-in-out infinite;
+      filter: drop-shadow(0 0 12px rgba(255, 100, 130, 0.6));
+    }
+
+    @keyframes heartbeat {
+      0%, 100% { transform: scale(1); }
+      15% { transform: scale(1.18); }
+      30% { transform: scale(1); }
+      45% { transform: scale(1.12); }
+    }
+
+    /* Floating hearts / particles */
+    .particles {
+      position: absolute;
+      inset: 0;
+      pointer-events: none;
+      overflow: hidden;
+    }
+
+    .particle {
+      position: absolute;
+      width: 10px;
+      height: 10px;
+      background: #ff7a9a;
+      border-radius: 50%;
+      opacity: 0;
+      animation: floatUp 4s ease-in infinite;
+    }
+
+    .particle.heart-shape {
+      background: transparent;
+      width: 14px;
+      height: 14px;
+    }
+
+    .particle.heart-shape::before,
+    .particle.heart-shape::after {
+      content: "";
+      position: absolute;
+      width: 8px;
+      height: 12px;
+      background: #ff6b8a;
+      border-radius: 8px 8px 0 0;
+    }
+
+    .particle.heart-shape::before {
+      left: 0;
+      transform: rotate(-45deg);
+      transform-origin: bottom right;
+    }
+
+    .particle.heart-shape::after {
+      right: 0;
+      transform: rotate(45deg);
+      transform-origin: bottom left;
+    }
+
+    @keyframes floatUp {
+      0% {
+        opacity: 0;
+        transform: translateY(0) scale(0.6);
+      }
+      15% {
+        opacity: 0.85;
+      }
+      100% {
+        opacity: 0;
+        transform: translateY(-280px) scale(1.1);
+      }
+    }
+
+    /* Dark-state text */
+    .dark-text {
+      position: absolute;
+      right: 12%;
+      top: 42%;
+      color: #6a6358;
+      font-size: 1.05rem;
+      line-height: 1.6;
+      text-align: right;
+      transition: opacity 0.5s;
+    }
+
+    body.is-on .dark-text {
+      opacity: 0;
+      pointer-events: none;
+    }
+
+    .brand {
+      position: absolute;
+      top: 24px;
+      left: 28px;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      color: #c9b8a0;
+      font-size: 14px;
+      font-weight: 600;
+      letter-spacing: 0.04em;
+      z-index: 30;
+    }
+
+    .brand-dot {
+      width: 28px;
+      height: 28px;
+      background: #ff6b8a;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: white;
+      font-weight: 700;
+      font-size: 13px;
+    }
+
+    .follow {
+      position: absolute;
+      bottom: 28px;
+      left: 50%;
+      transform: translateX(-50%);
+      color: #5a5348;
+      font-size: 12px;
+      letter-spacing: 0.15em;
+      text-transform: uppercase;
+    }
+  </style>
+</head>
+<body>
+  <div class="brand">
+    <div class="brand-dot">N</div>
+  Nematov DEV
+  </div>
+
+  <div id="scene">
+    <!-- Lamp -->
+    <div class="lamp">
+      <div class="cord"></div>
+      <div class="bulb"></div>
+      <div id="pullSwitch" role="button" aria-pressed="false" title="Pull the cord"></div>
+      <div class="hint" id="hintText">Shunchaki bosing</div>
+    </div>
+
+    <!-- Dark state text -->
+    <div class="dark-text">
+      It’s a little dark in here.<br />
+      Pull the cord to say it.
+    </div>
+
+    <!-- Love message -->
+    <div class="message">
+      <h1>
+        I <span class="heart">♥</span> YOU
+      </h1>
+    </div>
+
+    <!-- Particles container -->
+    <div class="particles" id="particles"></div>
+  </div>
+
+  <div class="follow">By @uzd_vb</div>
+
+  <script>
+    const scene = document.getElementById('scene');
+    const pullSwitch = document.getElementById('pullSwitch');
+    const hintText = document.getElementById('hintText');
+    const particles = document.getElementById('particles');
+
+    let isOn = false;
+    let animating = false;
+    let particleInterval = null;
+
+    function createParticle() {
+      const p = document.createElement('div');
+      p.className = Math.random() > 0.4 ? 'particle heart-shape' : 'particle';
+      p.style.left = (55 + Math.random() * 35) + '%';
+      p.style.bottom = (20 + Math.random() * 30) + '%';
+      p.style.animationDelay = (Math.random() * 0.8) + 's';
+      p.style.animationDuration = (3.2 + Math.random() * 1.8) + 's';
+      particles.appendChild(p);
+      setTimeout(() => p.remove(), 5500);
+    }
+
+    function startParticles() {
+      if (particleInterval) return;
+      particleInterval = setInterval(createParticle, 420);
+    }
+
+    function stopParticles() {
+      clearInterval(particleInterval);
+      particleInterval = null;
+      particles.innerHTML = '';
+    }
+
+    pullSwitch.addEventListener('click', () => {
+      if (animating) return;
+      animating = true;
+
+      pullSwitch.classList.add('pulling');
+      isOn = !isOn;
+      pullSwitch.setAttribute('aria-pressed', String(isOn));
+      hintText.textContent = isOn ? 'Pull again to switch off' : 'Pull the cord to switch on';
+
+      setTimeout(() => {
+        document.body.classList.toggle('is-on', isOn);
+        if (isOn) {
+          startParticles();
+        } else {
+          stopParticles();
+        }
+      }, 150);
+
+      setTimeout(() => {
+        pullSwitch.classList.remove('pulling');
+        animating = false;
+      }, 560);
+    });
+  </script>
+</body>
+</html>
